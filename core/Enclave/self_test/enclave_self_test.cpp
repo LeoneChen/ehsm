@@ -1,3 +1,4 @@
+#include "kafl_hc.h"
 #include <enclave_self_test.h>
 
 void Str2Hex(const char *in, uint8_t *out, int nLen)
@@ -62,6 +63,7 @@ extern sgx_status_t sm4_crypto_test();
 
 sgx_status_t enclave_self_test()
 {
+    LogEnter(__func__);
     if (aes_gcm_crypto_test() &
         sm4_crypto_test() &
         rsa_crypto_test() &

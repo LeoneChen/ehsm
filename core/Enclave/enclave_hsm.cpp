@@ -1,3 +1,4 @@
+#include "kafl_hc.h"
 /*
  * Copyright (C) 2020-2021 Intel Corporation
  *
@@ -99,6 +100,7 @@ static size_t get_signature_length(ehsm_keyspec_t keyspec)
 
 sgx_status_t enclave_get_domain_key_from_local()
 {
+    LogEnter(__func__);
     log_i("start get domain key from local.");
     sgx_status_t ret = SGX_ERROR_UNEXPECTED;
     uint32_t dk_cipher_len = sgx_calc_sealed_data_size(0, SGX_DOMAIN_KEY_SIZE);
@@ -159,6 +161,7 @@ sgx_status_t enclave_get_domain_key_from_local()
 
 sgx_status_t enclave_create_key(ehsm_keyblob_t *cmk, size_t cmk_size)
 {
+    LogEnter(__func__);
     sgx_status_t ret = SGX_ERROR_UNEXPECTED;
 
     if (cmk == NULL ||
@@ -234,6 +237,7 @@ sgx_status_t enclave_encrypt(ehsm_keyblob_t *cmk, size_t cmk_size,
                              ehsm_data_t *plaintext, size_t plaintext_size,
                              ehsm_data_t *ciphertext, size_t ciphertext_size)
 {
+    LogEnter(__func__);
     sgx_status_t ret = SGX_ERROR_UNEXPECTED;
 
     if (cmk == NULL ||
@@ -284,6 +288,7 @@ sgx_status_t enclave_decrypt(ehsm_keyblob_t *cmk, size_t cmk_size,
                              ehsm_data_t *ciphertext, size_t ciphertext_size,
                              ehsm_data_t *plaintext, size_t plaintext_size)
 {
+    LogEnter(__func__);
     sgx_status_t ret = SGX_ERROR_UNEXPECTED;
 
     if (cmk == NULL ||
@@ -331,6 +336,7 @@ sgx_status_t enclave_asymmetric_encrypt(const ehsm_keyblob_t *cmk, size_t cmk_si
                                         ehsm_data_t *plaintext, size_t plaintext_size,
                                         ehsm_data_t *ciphertext, size_t ciphertext_size)
 {
+    LogEnter(__func__);
     sgx_status_t ret = SGX_ERROR_UNEXPECTED;
 
     if (cmk == NULL ||
@@ -370,6 +376,7 @@ sgx_status_t enclave_asymmetric_decrypt(const ehsm_keyblob_t *cmk, size_t cmk_si
                                         ehsm_data_t *ciphertext, uint32_t ciphertext_size,
                                         ehsm_data_t *plaintext, uint32_t plaintext_size)
 {
+    LogEnter(__func__);
     sgx_status_t ret = SGX_ERROR_UNEXPECTED;
 
     if (cmk == NULL ||
@@ -418,6 +425,7 @@ sgx_status_t enclave_sign(const ehsm_keyblob_t *cmk, size_t cmk_size,
                           const ehsm_data_t *data, size_t data_size,
                           ehsm_data_t *signature, size_t signature_size)
 {
+    LogEnter(__func__);
     sgx_status_t ret = SGX_ERROR_UNEXPECTED;
 
     // check cmk_blob and cmk_blob_size
@@ -500,6 +508,7 @@ sgx_status_t enclave_verify(const ehsm_keyblob_t *cmk, size_t cmk_size,
                             const ehsm_data_t *signature, size_t signature_size,
                             bool *result)
 {
+    LogEnter(__func__);
     sgx_status_t ret = SGX_ERROR_UNEXPECTED;
 
     if (cmk == NULL ||
@@ -586,6 +595,7 @@ sgx_status_t enclave_generate_datakey(ehsm_keyblob_t *cmk, size_t cmk_size,
                                       ehsm_data_t *plaintext, size_t plaintext_size,
                                       ehsm_data_t *ciphertext, size_t ciphertext_size)
 {
+    LogEnter(__func__);
     sgx_status_t ret = SGX_ERROR_UNEXPECTED;
 
     if (cmk == NULL ||
@@ -689,6 +699,7 @@ sgx_status_t enclave_export_datakey(ehsm_keyblob_t *cmk, size_t cmk_size,
                                     ehsm_keyblob_t *ukey, size_t ukey_size,
                                     ehsm_data_t *newdatakey, size_t newdatakey_size)
 {
+    LogEnter(__func__);
     sgx_status_t ret = SGX_ERROR_UNEXPECTED;
     if (cmk == NULL ||
         cmk_size != APPEND_SIZE_TO_KEYBLOB_T(cmk->keybloblen) ||
@@ -798,11 +809,13 @@ out:
 
 sgx_status_t enclave_get_target_info(sgx_target_info_t *target_info)
 {
+    LogEnter(__func__);
     return sgx_self_target(target_info);
 }
 
 sgx_status_t enclave_create_report(const sgx_target_info_t *p_qe3_target, sgx_report_t *p_report)
 {
+    LogEnter(__func__);
     sgx_status_t ret = SGX_SUCCESS;
 
     sgx_report_data_t report_data = {0};
@@ -815,6 +828,7 @@ sgx_status_t enclave_create_report(const sgx_target_info_t *p_qe3_target, sgx_re
 
 sgx_status_t enclave_get_rand(uint8_t *data, uint32_t datalen)
 {
+    LogEnter(__func__);
     if (data == NULL)
         return SGX_ERROR_INVALID_PARAMETER;
 
@@ -823,6 +837,7 @@ sgx_status_t enclave_get_rand(uint8_t *data, uint32_t datalen)
 
 sgx_status_t enclave_get_apikey(uint8_t *apikey, uint32_t keylen)
 {
+    LogEnter(__func__);
     sgx_status_t ret = SGX_SUCCESS;
     if (apikey == NULL || keylen != EH_API_KEY_SIZE)
     {
@@ -862,6 +877,7 @@ sgx_status_t enclave_verify_quote_policy(uint8_t *quote, uint32_t quote_size,
                                          const char *mr_signer_good, uint32_t mr_signer_good_size,
                                          const char *mr_enclave_good, uint32_t mr_enclave_good_size)
 {
+    LogEnter(__func__);
     if (quote == NULL || mr_signer_good == NULL || mr_enclave_good == NULL)
     {
         log_d("quote or mr_signer_good or mr_enclave_good is null");
