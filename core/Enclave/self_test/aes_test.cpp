@@ -112,8 +112,10 @@ static bool aes_gcm_encryption(map<string, string> test_vector)
     GET_PARAMETER(ciphertext);
     GET_PARAMETER(tag);
 
-    uint8_t _ciphertext[VECTOR_LENGTH("plaintext") + VECTOR_LENGTH("aad")] = {0};
-    uint8_t _tag[VECTOR_LENGTH("tag")] = {0};
+    uint8_t _ciphertext[VECTOR_LENGTH("plaintext") + VECTOR_LENGTH("aad")];
+    memset(_ciphertext, 0, VECTOR_LENGTH("plaintext") + VECTOR_LENGTH("aad"));
+    uint8_t _tag[VECTOR_LENGTH("tag")];
+    memset(_tag, 0, VECTOR_LENGTH("tag"));
     (void)aes_gcm_encrypt(&*key,
                           _ciphertext,
                           get_block_mode(VECTOR_LENGTH("key")),
@@ -138,7 +140,8 @@ static bool aes_gcm_decryption(map<string, string> test_vector)
     GET_PARAMETER(ciphertext);
     GET_PARAMETER(tag);
 
-    uint8_t _plaintext[VECTOR_LENGTH("plaintext")] = {0};
+    uint8_t _plaintext[VECTOR_LENGTH("plaintext")];
+    memset(_plaintext, 0, VECTOR_LENGTH("plaintext"));
     (void)aes_gcm_decrypt(&*key,
                           _plaintext,
                           get_block_mode(VECTOR_LENGTH("key")),

@@ -34,7 +34,7 @@
 #include "json_utils.h"
 #include "../App/ehsm_provider.h"
 
-int main(int argc, char *argv[])
+int _hidden_main(int argc, char *argv[])
 {
     ehsm_status_t ret = EH_OK;
 

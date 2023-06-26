@@ -79,7 +79,7 @@ App_Cpp_Flags := $(App_C_Flags) -std=c++11
 App_Link_Flags := $(SGX_COMMON_CFLAGS) -L$(SGX_LIBRARY_PATH) -l$(Urts_Library_Name) -lpthread -ljsoncpp -luuid -L$(OPENSSL_LIBRARY_PATH) -l$(SGXSSL_Untrusted_Library_Name) -llog4cplus
 
 ifneq ($(SGX_MODE), HW)
-	App_Link_Flags += -lsgx_epid_sim -lsgx_quote_ex_sim
+	App_Link_Flags += -lsgx_epid_sim -lsgx_quote_ex_sim -lsgx_dcap_ql -lsgx_dcap_quoteverify -lsgx_uae_service_sim
 else
 	App_Link_Flags += -lsgx_quote_ex -lsgx_uae_service -lsgx_dcap_ql -lsgx_dcap_quoteverify -ldl
 endif
@@ -127,8 +127,8 @@ Enclave_Cpp_Flags := $(Enclave_C_Flags) -std=c++11 -nostdinc++ -include "tsgxssl
 # Otherwise, you may get some undesirable errors.
 Enclave_Link_Flags := $(SGX_COMMON_CFLAGS) -Wl,--no-undefined -nostdlib -nodefaultlibs -nostartfiles -L$(SGX_LIBRARY_PATH) \
 	$(SgxSSL_Link_Libraries) \
-	-Wl,--whole-archive -lsgx_dcap_tvl -l$(Trts_Library_Name) -Wl,--no-whole-archive \
-	-Wl,--start-group -lsgx_tstdc -lsgx_tcxx -l$(Crypto_Library_Name) -l$(Service_Library_Name) -Wl,--end-group \
+	-Wl,--whole-archive -lSGXSanRTEnclave -lsgx_dcap_tvl -l$(Trts_Library_Name) -Wl,--no-whole-archive \
+	-Wl,--start-group -lsgx_tstdc -lsgx_tcxx -lsgx_pthread -l$(Crypto_Library_Name) -l$(Service_Library_Name) -Wl,--end-group \
 	-Wl,-Bstatic -Wl,-Bsymbolic -Wl,--no-undefined \
 	-Wl,-pie,-eenclave_entry -Wl,--export-dynamic  \
 	-Wl,--defsym,__ImageBase=0 \
@@ -138,6 +138,48 @@ Enclave_Cpp_Objects := $(Enclave_Cpp_Files:.cpp=.o)
 
 Enclave_Config_File := Enclave/enclave_config/enclave_hsm.config.xml
 
+ifeq ($(KAFL_FUZZER), 1)
+App_Link_Flags += \
+	-ldl \
+	-Wl,-rpath=$(SGX_LIBRARY_PATH) \
+	-Wl,-whole-archive -lSGXSanRTApp -Wl,-no-whole-archive \
+	-lSGXFuzzerRT \
+	-lcrypto \
+	-lboost_program_options \
+	-rdynamic \
+	-lnyx_agent
+Enclave_C_Flags += \
+	-fno-discard-value-names \
+	-flegacy-pass-manager \
+	-Xclang -load -Xclang $(SGX_SDK)/lib64/libSGXSanPass.so
+Enclave_Cpp_Flags += \
+	-fno-discard-value-names \
+	-flegacy-pass-manager \
+	-Xclang -load -Xclang $(SGX_SDK)/lib64/libSGXSanPass.so
+else
+App_Link_Flags += \
+	-ldl \
+	-Wl,-rpath=$(SGX_LIBRARY_PATH) \
+	-Wl,-whole-archive -lSGXSanRTApp -Wl,-no-whole-archive \
+	-lSGXFuzzerRT \
+	-lcrypto \
+	-lboost_program_options \
+	-rdynamic
+Enclave_C_Flags += \
+	-fno-discard-value-names \
+	-flegacy-pass-manager \
+	-Xclang -load -Xclang $(SGX_SDK)/lib64/libSGXSanPass.so \
+	-flegacy-pass-manager \
+	-Xclang -load -Xclang $(SGX_SDK)/lib64/libSGXFuzzerPass.so \
+	-mllvm -at-enclave=true
+Enclave_Cpp_Flags += \
+	-fno-discard-value-names \
+	-flegacy-pass-manager \
+	-Xclang -load -Xclang $(SGX_SDK)/lib64/libSGXSanPass.so \
+	-flegacy-pass-manager \
+	-Xclang -load -Xclang $(SGX_SDK)/lib64/libSGXFuzzerPass.so \
+	-mllvm -at-enclave=true
+endif
 
 ######## Build Settings ########
 .PHONY: all target clean
@@ -156,6 +198,7 @@ endif
 clean:
 	@rm -f $(App_Cpp_Objects) $(App_Test_Cpp_Objects) $(Enclave_Cpp_Objects) App/auto_version.h App/enclave_hsm_u.* Enclave/enclave_hsm_t.*
 	@rm -rf $(OUT)
+	@rm -f InstrumentStatistics.json
 
 
 ######## App Objects ########
@@ -170,11 +213,12 @@ App/auto_version.h:
 	@echo "  ==>  touch App/auto_version.h"
 
 App/enclave_hsm_u.c: $(SGX_EDGER8R) Enclave/enclave_hsm.edl
-	@cd App && $(SGX_EDGER8R) --untrusted ../Enclave/enclave_hsm.edl --search-path ../Enclave --search-path ../Enclave/self_test --search-path $(SGX_SDK)/include --search-path $(OPENSSL_PATH)/include --search-path $(LOG_DIR)
+	@cd App && $(SGX_EDGER8R) --untrusted ../Enclave/enclave_hsm.edl --search-path ../Enclave --search-path ../Enclave/self_test --search-path $(SGX_SDK)/include --search-path $(OPENSSL_PATH)/include --search-path $(LOG_DIR) --dump-parse ../Enclave.edl.json
 	@echo "GEN  =>  $@"
 
-App/enclave_hsm_u.o: App/enclave_hsm_u.c
-	@$(CXX) $(App_C_Flags) -c $< -o $@
+App/enclave_hsm_u.o: App/enclave_hsm_u.c $(Enclave_Name)
+	@$(CXX) $(App_C_Flags) -c $< -o $@ \
+	-flegacy-pass-manager -Xclang -load -Xclang $(SGX_SDK)/lib64/libSGXFuzzerPass.so
 	@echo "CXX   <=  $<"
 
 App/%.o: App/%.cpp App/auto_version.h App/enclave_hsm_u.c
@@ -190,11 +234,11 @@ Test/%.o: Test/%.cpp
 	@echo "CXX  <=  $<"
 
 $(Provider_Name): $(App_Cpp_Objects) App/enclave_hsm_u.o App/auto_version.h
-	@$(CXX) $^ -o $@ $(App_Link_Flags) -shared
+	@$(CXX) $(filter-out App/auto_version.h,$^) -o $@ $(App_Link_Flags)
 	@echo "LINK =>  $@"
 
 $(App_Test_Name): $(App_Cpp_Objects) $(App_Test_Cpp_Objects) App/enclave_hsm_u.o App/auto_version.h
-	@$(CXX) $^ -o $@ $(App_Link_Flags)
+	@$(CXX) $(filter-out App/auto_version.h,$^) -o $@ $(App_Link_Flags)
 	@echo "LINK =>  $@"
 
 ######## Enclave Objects ########

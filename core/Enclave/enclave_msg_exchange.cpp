@@ -1,3 +1,11 @@
+#if defined(__cplusplus)
+extern "C"{
+#endif
+void SGXSanLogEnter(const char *str);
+#if defined(__cplusplus)
+}
+#endif
+#define LogEnter SGXSanLogEnter
 /*
  * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
@@ -411,6 +419,7 @@ ATTESTATION_STATUS generate_session_id(uint32_t *session_id)
  * */
 extern "C" uint32_t enclave_la_create_session()
 {
+    LogEnter(__func__);
         return create_session(&g_session);
 }
 
@@ -419,6 +428,7 @@ extern "C" uint32_t enclave_la_create_session()
  * */
 uint32_t enclave_la_message_exchange()
 {
+    LogEnter(__func__);
     ATTESTATION_STATUS ke_status = SUCCESS;
     uint32_t target_fn_id, msg_type;
     uint8_t* marshalled_inp_buff = NULL;
@@ -481,6 +491,7 @@ out:
  *   This is ECALL interface to close secure session*/
 uint32_t enclave_la_close_session()
 {
+    LogEnter(__func__);
     ATTESTATION_STATUS ke_status = SUCCESS;
 
     ke_status = close_session(&g_session);

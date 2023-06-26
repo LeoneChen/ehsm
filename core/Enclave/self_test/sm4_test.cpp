@@ -33,7 +33,8 @@ static bool sm4_ctr_encryption(map<string, string> test_vector)
     GET_PARAMETER(iv);
     GET_PARAMETER(ciphertext);
 
-    uint8_t _ciphertext[VECTOR_LENGTH("plaintext")] = {0};
+    uint8_t _ciphertext[VECTOR_LENGTH("plaintext")];
+    memset(_ciphertext, 0, VECTOR_LENGTH("plaintext"));
     (void)sm4_ctr_encrypt(&*key,
                           _ciphertext,
                           &*plaintext,
@@ -50,7 +51,8 @@ static bool sm4_ctr_decryption(map<string, string> test_vector)
     GET_PARAMETER(iv);
     GET_PARAMETER(ciphertext);
 
-    uint8_t _plaintext[VECTOR_LENGTH("plaintext")] = {0};
+    uint8_t _plaintext[VECTOR_LENGTH("plaintext")];
+    memset(_plaintext, 0, VECTOR_LENGTH("plaintext"));
     (void)sm4_ctr_decrypt(&*key,
                           _plaintext,
                           &*ciphertext,
@@ -67,7 +69,8 @@ static bool sm4_cbc_encryption(map<string, string> test_vector)
     GET_PARAMETER(iv);
     GET_PARAMETER(ciphertext);
 
-    uint8_t _ciphertext[VECTOR_LENGTH("plaintext")] = {0};
+    uint8_t _ciphertext[VECTOR_LENGTH("plaintext")];
+    memset(_ciphertext, 0, VECTOR_LENGTH("plaintext"));
     (void)sm4_cbc_encrypt(&*key,
                           _ciphertext,
                           &*plaintext,
@@ -84,7 +87,8 @@ static bool sm4_cbc_decryption(map<string, string> test_vector)
     GET_PARAMETER(iv);
     GET_PARAMETER(ciphertext);
 
-    uint8_t _plaintext[VECTOR_LENGTH("plaintext")] = {0};
+    uint8_t _plaintext[VECTOR_LENGTH("plaintext")];
+    memset(_plaintext, 0, VECTOR_LENGTH("plaintext"));
     (void)sm4_cbc_decrypt(&*key,
                           _plaintext,
                           &*ciphertext,

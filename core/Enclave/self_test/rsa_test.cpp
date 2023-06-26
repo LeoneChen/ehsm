@@ -531,7 +531,8 @@ static bool rsa_sign_verify_with_PKCS1(map<string, string> test_vector)
                    test_vector["e"].c_str(),
                    test_vector["d"].c_str());
 
-    uint8_t _S[RSA_size(key)] = {0};
+    uint8_t _S[RSA_size(key)];
+    memset(_S, 0, RSA_size(key));
 
     (void)rsa_sign(key,
                    get_digestmode(digestmode),
