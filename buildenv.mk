@@ -75,7 +75,7 @@ CXX ?= g++
 RM = rm -f
 
 ######## SGX SSL Settings ########
-OPENSSL_PATH := $(ROOT_DIR)/utils/sgxssl
+OPENSSL_PATH := $(realpath -s $(TOPDIR)/../../install/sgxssl)
 OPENSSL_LIBRARY_PATH := $(OPENSSL_PATH)/lib64
 SOCKET_DIR := $(ROOT_DIR)/utils/sgx_socket
 LOG_DIR := $(ROOT_DIR)/utils/log4cplus
@@ -85,7 +85,7 @@ SGXSSL_Untrusted_Library_Name := sgx_usgxssl
 OpenSSL_SSL_Library_Name := sgx_tsgxssl_ssl
 
 SgxSSL_Link_Libraries := -L$(OPENSSL_LIBRARY_PATH) -Wl,--whole-archive -l$(SGXSSL_Library_Name) -Wl,--no-whole-archive \
-			-l$(OpenSSL_SSL_Library_Name) -l$(OpenSSL_Crypto_Library_Name) -lsgx_pthread
+			-l$(OpenSSL_SSL_Library_Name) -l$(OpenSSL_Crypto_Library_Name)
 
 ######## SGX SDK Settings ########
 
@@ -136,6 +136,7 @@ SGX_COMMON_FLAGS += -Wall -Wextra -Winit-self -Wpointer-arith -Wreturn-type \
     -Wmissing-include-dirs -Wfloat-equal -Wundef -Wshadow \
     -Wcast-align -Wredundant-decls
 
+SGX_COMMON_CFLAGS += $(SGX_COMMON_FLAGS)
 #SGX_COMMON_CFLAGS += $(SGX_COMMON_FLAGS) -Wstrict-prototypes -Wunsuffixed-float-constants -Wcast-qual
 
 SGX_COMMON_CXXFLAGS := $(SGX_COMMON_FLAGS) -Wnon-virtual-dtor -std=c++11

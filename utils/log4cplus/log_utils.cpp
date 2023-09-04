@@ -33,7 +33,8 @@ int initLogger(const char* logs_filename)
 
         printf("Logs folder:\t%s\n", LOGS_FOLDER);
         int path_len = strlen(LOGS_FOLDER) + strlen(logs_filename) + strlen("/")+1;
-        char logs_path[path_len] = {0};        
+        char logs_path[path_len];
+        memset(logs_path, 0, path_len);
         snprintf(logs_path, path_len, "%s/%s", LOGS_FOLDER, logs_filename);
 
         SharedAppenderPtr fileAppender(new RollingFileAppender(
@@ -75,10 +76,12 @@ void do_logger(LogLevel logLevel,
     {                
         va_list args;            
         va_start(args, pFormat);        
-        char buf[bufSize] = {0};        
+        char buf[bufSize];
+        memset(buf, 0, bufSize);
         vsnprintf(buf, bufSize, pFormat, args);    
         va_end(args);           
-        char msg[bufSize] = {0};        
+        char msg[bufSize];
+        memset(msg, 0, bufSize);
         sprintf(msg,"[%s: line %d] - %s", filename, line, buf);    
         logger.forcedLog(logLevel, msg);
     }

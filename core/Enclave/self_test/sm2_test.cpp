@@ -291,7 +291,8 @@ bool sm2_crypto_test()
         PEM_write_bio_ECPrivateKey(bio, ec_key, NULL, NULL, 0, NULL, NULL);
 
         // encryption
-        uint8_t plaintext[length] = {0};
+        uint8_t plaintext[length];
+        memset(plaintext, 0, length);
         sgx_read_rand(plaintext, length);
         EVP_PKEY *pkey1 = PEM_read_bio_PUBKEY(bio, NULL, NULL, NULL);
         EVP_PKEY_set_alias_type(pkey1, EVP_PKEY_SM2);
@@ -299,11 +300,13 @@ bool sm2_crypto_test()
         EVP_PKEY_encrypt_init(ectx);
         size_t cipher_len;
         EVP_PKEY_encrypt(ectx, NULL, &cipher_len, plaintext, length);
-        uint8_t ciphertext[cipher_len] = {0};
+        uint8_t ciphertext[cipher_len];
+        memset(ciphertext, 0, cipher_len);
         EVP_PKEY_encrypt(ectx, ciphertext, &cipher_len, plaintext, length);
 
         // decryption
-        uint8_t _plaintext[length] = {0};
+        uint8_t _plaintext[length];
+        memset(_plaintext, 0, length);
         EVP_PKEY *pkey2 = PEM_read_bio_PrivateKey(bio, NULL, NULL, NULL);
         EVP_PKEY_set_alias_type(pkey2, EVP_PKEY_SM2);
         EVP_PKEY_CTX *dctx = EVP_PKEY_CTX_new(pkey2, NULL);

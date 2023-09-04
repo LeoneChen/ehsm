@@ -106,7 +106,7 @@ Enclave_Include_Paths := \
 	-I$(TOPDIR)/include \
 	-I$(OPENSSL_PATH)/include
 
-Enclave_C_Flags := $(SGX_COMMON_CFLAGS) -nostdinc -fvisibility=hidden -fpie -fstack-protector $(Enclave_Include_Paths) 
+Enclave_C_Flags := $(SGX_COMMON_CFLAGS) -fvisibility=hidden -fpie -fstack-protector $(Enclave_Include_Paths)
 
 ifeq ($(ENABLE_SELF_TEST), 1)
 	Enclave_C_Flags += -DENABLE_SELF_TEST
@@ -116,7 +116,7 @@ ifeq ($(ENABLE_PAIR_WISE_TEST), 1)
 	Enclave_C_Flags += -DENABLE_PAIR_WISE_TEST
 endif
 
-Enclave_Cpp_Flags := $(Enclave_C_Flags) -std=c++11 -nostdinc++ -include "tsgxsslio.h"
+Enclave_Cpp_Flags := $(Enclave_C_Flags) -std=c++11 -include "tsgxsslio.h"
 
 # To generate a proper enclave, it is recommended to follow below guideline to link the trusted libraries:
 #    1. Link sgx_trts with the `--whole-archive' and `--no-whole-archive' options,
@@ -125,19 +125,78 @@ Enclave_Cpp_Flags := $(Enclave_C_Flags) -std=c++11 -nostdinc++ -include "tsgxssl
 #       Use `--start-group' and `--end-group' to link these libraries.
 # Do NOT move the libraries linked with `--start-group' and `--end-group' within `--whole-archive' and `--no-whole-archive' options.
 # Otherwise, you may get some undesirable errors.
-Enclave_Link_Flags := $(SGX_COMMON_CFLAGS) -Wl,--no-undefined -nostdlib -nodefaultlibs -nostartfiles -L$(SGX_LIBRARY_PATH) \
+Enclave_Link_Flags := $(SGX_COMMON_CFLAGS) -L$(SGX_LIBRARY_PATH) \
 	$(SgxSSL_Link_Libraries) \
-	-Wl,--whole-archive -lsgx_dcap_tvl -l$(Trts_Library_Name) -Wl,--no-whole-archive \
-	-Wl,--start-group -lsgx_tstdc -lsgx_tcxx -l$(Crypto_Library_Name) -l$(Service_Library_Name) -Wl,--end-group \
-	-Wl,-Bstatic -Wl,-Bsymbolic -Wl,--no-undefined \
-	-Wl,-pie,-eenclave_entry -Wl,--export-dynamic  \
-	-Wl,--defsym,__ImageBase=0 \
-	-Wl,--version-script=Enclave/enclave_config/enclave_hsm.lds
+	-Wl,--whole-archive -lSGXSanRTEnclave -lsgx_dcap_tvl -l$(Trts_Library_Name) -Wl,--no-whole-archive \
+	-Wl,--start-group -l$(Crypto_Library_Name) -l$(Service_Library_Name) -Wl,--end-group \
+	-Wl,-Bsymbolic \
+	-Wl,-eenclave_entry -Wl,--export-dynamic  \
+	-Wl,--defsym,__ImageBase=0
 
 Enclave_Cpp_Objects := $(Enclave_Cpp_Files:.cpp=.o)
 
 Enclave_Config_File := Enclave/enclave_config/enclave_hsm.config.xml
 
+ifeq ($(KAFL_FUZZER), 1)
+App_Link_Flags += \
+	-ldl \
+	-Wl,-rpath=$(SGX_LIBRARY_PATH) \
+	-Wl,-whole-archive -lSGXSanRTApp -Wl,-no-whole-archive \
+	-lSGXFuzzerRT \
+	-lcrypto \
+	-lboost_program_options \
+	-rdynamic \
+	-lnyx_agent \
+	-lsgx_dcap_ql \
+	-lsgx_dcap_quoteverify \
+	-lsgx_uae_service_sim
+Enclave_C_Flags += \
+	-fno-discard-value-names \
+	-flegacy-pass-manager \
+	-Xclang -load -Xclang $(SGX_SDK)/lib64/libSGXSanPass.so
+Enclave_Cpp_Flags += \
+	-fno-discard-value-names \
+	-flegacy-pass-manager \
+	-Xclang -load -Xclang $(SGX_SDK)/lib64/libSGXSanPass.so
+Enclave_Link_Flags += -shared
+else
+App_C_Flags += \
+	-fsanitize-coverage=inline-8bit-counters,bb,no-prune,pc-table,trace-cmp \
+	-fprofile-instr-generate \
+	-fcoverage-mapping
+App_Cpp_Flags += \
+	-fsanitize-coverage=inline-8bit-counters,bb,no-prune,pc-table,trace-cmp \
+	-fprofile-instr-generate \
+	-fcoverage-mapping
+App_Link_Flags += \
+	-ldl \
+	-Wl,-rpath=$(SGX_LIBRARY_PATH) \
+	-Wl,-whole-archive -lSGXSanRTApp -Wl,-no-whole-archive \
+	-lSGXFuzzerRT \
+	-lcrypto \
+	-lboost_program_options \
+	-rdynamic \
+	-fuse-ld=${LD} \
+	-fprofile-instr-generate \
+	-lsgx_dcap_ql \
+	-lsgx_dcap_quoteverify \
+	-lsgx_uae_service_sim
+Enclave_C_Flags += \
+	-fno-discard-value-names \
+	-flegacy-pass-manager \
+	-Xclang -load -Xclang $(SGX_SDK)/lib64/libSGXSanPass.so \
+	-fsanitize-coverage=inline-8bit-counters,bb,no-prune,pc-table,trace-cmp \
+	-fprofile-instr-generate \
+	-fcoverage-mapping
+Enclave_Cpp_Flags += \
+	-fno-discard-value-names \
+	-flegacy-pass-manager \
+	-Xclang -load -Xclang $(SGX_SDK)/lib64/libSGXSanPass.so \
+	-fsanitize-coverage=inline-8bit-counters,bb,no-prune,pc-table,trace-cmp \
+	-fprofile-instr-generate \
+	-fcoverage-mapping
+Enclave_Link_Flags += -fuse-ld=${LD} -fprofile-instr-generate -shared
+endif
 
 ######## Build Settings ########
 .PHONY: all target clean
@@ -145,12 +204,12 @@ all: target
 	@$(MAKE) target
 	@echo $(EHSM_DEFAULT_DOMAIN_KEY_FALLBACK)
 	@mkdir -p $(OUT)
-	@mv $(Provider_Name) $(Signed_Enclave_Name) $(Enclave_Name) $(App_Test_Name) $(OUT)
+	@mv $(Provider_Name) $(Enclave_Name) $(App_Test_Name) $(OUT)
 
 ifeq ($(Build_Mode), HW_RELEASE)
 target: $(Provider_Name) $(Enclave_Name) $(App_Test_Name)
 else
-target: $(Provider_Name) $(Signed_Enclave_Name) $(App_Test_Name)
+target: $(Provider_Name) $(Enclave_Name) $(App_Test_Name)
 endif
 
 clean:
@@ -170,11 +229,12 @@ App/auto_version.h:
 	@echo "  ==>  touch App/auto_version.h"
 
 App/enclave_hsm_u.c: $(SGX_EDGER8R) Enclave/enclave_hsm.edl
-	@cd App && $(SGX_EDGER8R) --untrusted ../Enclave/enclave_hsm.edl --search-path ../Enclave --search-path ../Enclave/self_test --search-path $(SGX_SDK)/include --search-path $(OPENSSL_PATH)/include --search-path $(LOG_DIR)
+	@cd App && $(SGX_EDGER8R) --untrusted ../Enclave/enclave_hsm.edl --search-path ../Enclave --search-path ../Enclave/self_test --search-path $(SGX_SDK)/include --search-path $(OPENSSL_PATH)/include --search-path $(LOG_DIR) --dump-parse ../Enclave.edl.json
 	@echo "GEN  =>  $@"
 
 App/enclave_hsm_u.o: App/enclave_hsm_u.c
-	@$(CXX) $(App_C_Flags) -c $< -o $@
+	@$(CXX) $(App_C_Flags) -c $< -o $@ \
+	-flegacy-pass-manager -Xclang -load -Xclang $(SGX_SDK)/lib64/libSGXFuzzerPass.so
 	@echo "CXX   <=  $<"
 
 App/%.o: App/%.cpp App/auto_version.h App/enclave_hsm_u.c
@@ -190,11 +250,11 @@ Test/%.o: Test/%.cpp
 	@echo "CXX  <=  $<"
 
 $(Provider_Name): $(App_Cpp_Objects) App/enclave_hsm_u.o App/auto_version.h
-	@$(CXX) $^ -o $@ $(App_Link_Flags) -shared
+	@$(CXX) $(filter-out App/auto_version.h,$^) -o $@ $(App_Link_Flags) -shared
 	@echo "LINK =>  $@"
 
 $(App_Test_Name): $(App_Cpp_Objects) $(App_Test_Cpp_Objects) App/enclave_hsm_u.o App/auto_version.h
-	@$(CXX) $^ -o $@ $(App_Link_Flags)
+	@$(CXX) $(filter-out App/auto_version.h,$^) -o $@ $(App_Link_Flags)
 	@echo "LINK =>  $@"
 
 ######## Enclave Objects ########

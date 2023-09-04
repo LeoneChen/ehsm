@@ -334,7 +334,8 @@ int ocall_read_domain_key(uint8_t *cipher_dk, uint32_t cipher_dk_len)
         return -1;
     }
 
-    uint8_t tmp[size] = {0};
+    uint8_t tmp[size];
+    memset(tmp, 0, size);
     if (file.read((char *)&tmp, size))
     {
         memcpy(cipher_dk, tmp, cipher_dk_len);

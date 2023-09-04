@@ -45,3 +45,6 @@ dkeycache/App/auto_version.h
 dkeyserver/App/auto_version.h
 
 test/__pycache__/
+Enclave.edl.json
+workdir*
+*.so
